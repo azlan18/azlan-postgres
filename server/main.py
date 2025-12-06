@@ -69,9 +69,22 @@ def get_tables():
                 except Exception as db_err:
                     logger.warning(f"Could not fetch rows for table {table}: {db_err}")
 
+                # Fetch foreign keys
+                foreign_keys = []
+                try:
+                    for fk in inspector.get_foreign_keys(table):
+                        foreign_keys.append({
+                            "constrained_columns": fk["constrained_columns"],
+                            "referred_table": fk["referred_table"],
+                            "referred_columns": fk["referred_columns"]
+                        })
+                except Exception as fk_err:
+                    logger.warning(f"Could not fetch foreign keys for table {table}: {fk_err}")
+
                 table_details.append({
                     "name": table,
                     "columns": columns,
+                    "foreign_keys": foreign_keys,
                     "rows": rows
                 })
             except Exception as inner_e:

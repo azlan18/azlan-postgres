@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, type TableInfo } from "@/components/Sidebar";
 import { QueryEditor } from "@/components/QueryEditor";
 import { ResultsTable } from "@/components/ResultsTable";
+import { SchemaVisualizer } from "@/components/SchemaVisualizer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -17,6 +18,32 @@ function App() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionTime, setExecutionTime] = useState<number | undefined>(undefined);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Table state lifted from Sidebar
+  const [tables, setTables] = useState<TableInfo[]>([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
+  const [tablesError, setTablesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTablesLoading(true);
+    fetch("http://localhost:8000/tables")
+      .then(async (res) => {
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: "Unknown error" }));
+          throw new Error(errData.detail || "Failed to fetch tables");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setTables(data);
+        setTablesLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching tables:", err);
+        setTablesError(err.message);
+        setTablesLoading(false);
+      });
+  }, [refreshTrigger]);
 
   const handleRunQuery = async () => {
     if (!query.trim()) return;
@@ -63,10 +90,6 @@ function App() {
   const handleSelectTable = (tableName: string) => {
     const newQuery = `SELECT * FROM ${tableName} LIMIT 100;`;
     setQuery(newQuery);
-    // We can optionally auto-run the query here
-    // handleRunQuery(); // This would need handleRunQuery to accept a query arg or use a useEffect.
-    // For now, let's just set the query and let the user click run, or we can use a ref to run it.
-    // Actually, setting the query is enough for a playground.
   };
 
   return (
@@ -80,13 +103,18 @@ function App() {
 
         <div className="flex-1 overflow-hidden">
           <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="bg-sidebar">
-              <Sidebar onSelectTable={handleSelectTable} refreshTrigger={refreshTrigger} />
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
+              <Sidebar
+                onSelectTable={handleSelectTable}
+                tables={tables}
+                loading={tablesLoading}
+                error={tablesError}
+              />
             </ResizablePanel>
 
             <ResizableHandle />
 
-            <ResizablePanel defaultSize={75}>
+            <ResizablePanel defaultSize={50}>
               <ResizablePanelGroup direction="vertical">
                 <ResizablePanel defaultSize={50} minSize={30}>
                   <QueryEditor
@@ -108,6 +136,18 @@ function App() {
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
+
+            <ResizableHandle />
+
+            <ResizablePanel defaultSize={30} minSize={20} collapsible={true} collapsedSize={0}>
+              <div className="h-full border-l border-border bg-background">
+                <div className="p-2 border-b border-border bg-card text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Schema Visualization
+                </div>
+                <SchemaVisualizer tables={tables} />
+              </div>
+            </ResizablePanel>
+
           </ResizablePanelGroup>
         </div>
       </div>

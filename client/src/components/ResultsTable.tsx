@@ -6,7 +6,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { AlertCircle, Clock, Database } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -113,6 +113,7 @@ export function ResultsTable({ results, error, executionTime }: ResultsTableProp
                         </TableBody>
                     </Table>
                 </motion.div>
+                <ScrollBar orientation="horizontal" />
             </ScrollArea>
         </div>
     );

@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { motion } from "framer-motion";
+import { useTheme } from "@/components/theme-provider";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 
 interface QueryEditorProps {
     query: string;
@@ -12,6 +14,8 @@ interface QueryEditorProps {
 }
 
 export function QueryEditor({ query, onQueryChange, onRunQuery, isExecuting }: QueryEditorProps) {
+    const { theme } = useTheme();
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
             onRunQuery();
@@ -61,7 +65,7 @@ export function QueryEditor({ query, onQueryChange, onRunQuery, isExecuting }: Q
                 <CodeMirror
                     value={query}
                     height="100%"
-                    theme="none"
+                    theme={theme === "dark" ? vscodeDark : "light"}
                     extensions={[sql()]}
                     onChange={(value) => onQueryChange(value)}
                     className="h-full text-sm font-mono"

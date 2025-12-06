@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
 import { Database, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 interface Column {
@@ -8,42 +6,21 @@ interface Column {
     type: string;
 }
 
-interface TableInfo {
+export interface TableInfo {
     name: string;
     columns: Column[];
     rows?: any[];
+    foreign_keys?: any[];
 }
 
 interface SidebarProps {
     onSelectTable: (tableName: string) => void;
-    refreshTrigger?: number;
+    tables: TableInfo[];
+    loading: boolean;
+    error: string | null;
 }
 
-export function Sidebar({ onSelectTable, refreshTrigger }: SidebarProps) {
-    const [tables, setTables] = useState<TableInfo[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        setLoading(true);
-        fetch("http://localhost:8000/tables")
-            .then(async (res) => {
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({ detail: "Unknown error" }));
-                    throw new Error(errData.detail || "Failed to fetch tables");
-                }
-                return res.json();
-            })
-            .then((data) => {
-                setTables(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Error fetching tables:", err);
-                setError(err.message);
-                setLoading(false);
-            });
-    }, [refreshTrigger]); // Re-fetch when trigger changes
+export function Sidebar({ onSelectTable, tables, loading, error }: SidebarProps) {
 
     return (
         <div className="h-full flex flex-col bg-sidebar border-r border-sidebar-border">
@@ -55,7 +32,7 @@ export function Sidebar({ onSelectTable, refreshTrigger }: SidebarProps) {
                 <p className="text-xs text-muted-foreground mt-1">Connected to azlan-db</p>
             </div>
 
-            <ScrollArea className="flex-1 p-4">
+            <div className="flex-1 overflow-y-auto p-4">
                 {loading && (
                     <div className="flex items-center justify-center p-4 text-muted-foreground">
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -89,32 +66,30 @@ export function Sidebar({ onSelectTable, refreshTrigger }: SidebarProps) {
                                 {/* Mini Table Preview */}
                                 <div className="border border-border rounded-md overflow-hidden bg-card shadow-sm mx-1">
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-[10px] text-left">
+                                        <table className="min-w-full text-[10px] text-left">
                                             <thead className="bg-muted text-muted-foreground font-medium border-b border-border">
                                                 <tr>
-                                                    {table.columns.slice(0, 3).map((col) => (
+                                                    {table.columns.map((col) => (
                                                         <th key={col.name} className="px-2 py-1 whitespace-nowrap">
                                                             {col.name}
                                                         </th>
                                                     ))}
-                                                    {table.columns.length > 3 && <th className="px-2 py-1">...</th>}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
                                                 {table.rows && table.rows.length > 0 ? (
                                                     table.rows.map((row, i) => (
                                                         <tr key={i} className="hover:bg-muted/50 transition-colors">
-                                                            {table.columns.slice(0, 3).map((col) => (
-                                                                <td key={`${i}-${col.name}`} className="px-2 py-1 whitespace-nowrap text-card-foreground truncate max-w-[80px]">
+                                                            {table.columns.map((col) => (
+                                                                <td key={`${i}-${col.name}`} className="px-2 py-1 whitespace-nowrap text-card-foreground">
                                                                     {row[col.name] === null ? <span className="text-muted-foreground opacity-50">NULL</span> : String(row[col.name])}
                                                                 </td>
                                                             ))}
-                                                            {table.columns.length > 3 && <td className="px-2 py-1 text-muted-foreground">...</td>}
                                                         </tr>
                                                     ))
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan={Math.min(table.columns.length, 4)} className="px-2 py-2 text-center text-muted-foreground italic">
+                                                        <td colSpan={table.columns.length} className="px-2 py-2 text-center text-muted-foreground italic">
                                                             No data
                                                         </td>
                                                     </tr>
@@ -127,7 +102,7 @@ export function Sidebar({ onSelectTable, refreshTrigger }: SidebarProps) {
                         ))}
                     </div>
                 )}
-            </ScrollArea>
+            </div>
         </div>
     );
 }
