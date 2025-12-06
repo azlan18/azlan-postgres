@@ -1,0 +1,28 @@
+# General
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+server/venv/
+server/.env
+server/.pytest_cache/
+
+# Node / Frontend
+client/node_modules/
+client/dist/
+client/.env
+client/.env.local
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+# Docker
+.docker/
+
+# Postgres (if mapped locally in future)
+postgres_data/

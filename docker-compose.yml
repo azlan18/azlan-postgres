@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  azlan-db-service:
+    image: postgres:16
+    container_name: azlan-db-container
+    environment:
+      POSTGRES_USER: azlankhawar
+      POSTGRES_PASSWORD: azlan123
+      POSTGRES_DB: azlan-db
+    ports:
+      - "6000:5432" # Your Mac connects on localhost:6000
+    volumes:
+      - azlan-db-data:/var/lib/postgresql/data
+    networks:
+      - azlan-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U azlankhawar -d azlan-db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: ./server
+    container_name: azlan-server
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://azlankhawar:azlan123@azlan-db-service:5432/azlan-db
+    depends_on:
+      azlan-db-service:
+        condition: service_healthy
+    networks:
+      - azlan-network
+
+  client:
+    build: ./client
+    container_name: azlan-client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - azlan-network
+
+volumes:
+  azlan-db-data:
+
+
+networks:
+  azlan-network:
+    driver: bridge
